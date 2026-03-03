@@ -969,5 +969,49 @@ def main():
     else:
         st.error("データが存在しません。ファイルやデータ形式を確認してください。")
 
+# ユーザー管理情報（ログイン名: パスワード）
+# セキュリティを高める場合は Streamlit Secrets (.streamlit/secrets.toml) に移行を推奨します
+USERS = {
+    "admin": "takayama2025",
+    "guest": "guest123"
+}
+
+def check_password():
+    """Returns True if the user is logged in."""
+    def password_entered():
+        user = st.session_state.get("login_username", "")
+        pwd = st.session_state.get("login_password", "")
+        if user in USERS and USERS[user] == pwd:
+            st.session_state["password_correct"] = True
+            st.session_state["logged_in_user"] = user
+            if "login_password" in st.session_state:
+                del st.session_state["login_password"]
+        else:
+            st.session_state["password_correct"] = False
+
+    def logout():
+        st.session_state["password_correct"] = False
+        if "logged_in_user" in st.session_state:
+            del st.session_state["logged_in_user"]
+
+    if st.session_state.get("password_correct", False):
+        st.sidebar.markdown(f"👤 ログイン中: **{st.session_state.get('logged_in_user', '')}**")
+        st.sidebar.button("ログアウト", on_click=logout)
+        return True
+
+    # Show login form
+    st.subheader("🔐 ダッシュボードへログイン")
+    st.text_input("ユーザー名", key="login_username")
+    st.text_input("パスワード", type="password", key="login_password")
+    
+    # ログインボタン。ボタンが押されると上で定義したpassword_enteredが呼ばれる
+    st.button("ログイン", on_click=password_entered)
+    
+    if "password_correct" in st.session_state and not st.session_state["password_correct"]:
+        st.error("😕 ユーザー名またはパスワードが間違っています。")
+        
+    return False
+
 if __name__ == "__main__":
-    main()
+    if check_password():
+        main()
